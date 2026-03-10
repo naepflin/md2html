@@ -1,0 +1,23 @@
+{
+  "name": "md2html",
+  "version": "1.0.0",
+  "description": "Simple markdown to HTML converter with modern CSS and syntax highlighting",
+  "main": "index.js",
+  "bin": {
+    "md2html": "./index.js"
+  },
+  "scripts": {
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "marked": "^12.0.0"
+  },
+  "keywords": [
+    "markdown",
+    "html",
+    "converter",
+    "syntax-highlighting"
+  ],
+  "author": "",
+  "license": "MIT"
+}
