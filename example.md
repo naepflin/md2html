@@ -61,6 +61,19 @@ print([fibonacci(i) for i in range(10)])
 | Code blocks | ✅ | With syntax highlighting |
 | Tables | ✅ | Responsive |
 | Dark mode | ✅ | Automatic |
+| Mermaid diagrams | ✅ | Flowcharts, sequences, and more |
+
+## Mermaid Diagram
+
+```mermaid
+flowchart TD
+    A[Write Markdown] --> B[Run md2html]
+    B --> C{Output file specified?}
+    C -->|Yes| D[Write to specified file]
+    C -->|No| E[Replace .md with .html]
+    D --> F[Open in browser]
+    E --> F
+```
 
 ## Links
 

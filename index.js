@@ -24,7 +24,21 @@ function convertMarkdownToHtml(markdownContent, title = 'Document') {
         ${htmlContent}
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script>hljs.highlightAll();</script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'
+        });
+        document.querySelectorAll('pre code.language-mermaid').forEach(el => {
+            const div = document.createElement('div');
+            div.className = 'mermaid';
+            div.textContent = el.textContent;
+            el.closest('pre').replaceWith(div);
+        });
+        await mermaid.run();
+        hljs.highlightAll();
+    </script>
 </body>
 </html>`;
 }
