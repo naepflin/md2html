@@ -4,17 +4,21 @@ const fs = require('fs');
 const path = require('path');
 const { marked } = require('marked');
 
+const pkg = require('./package.json');
+const hljsVersion = pkg.dependencies['highlight.js'].replace(/^\^/, '');
+const mermaidVersion = pkg.dependencies['mermaid'].replace(/^\^/, '');
+
 function convertMarkdownToHtml(markdownContent, title = 'Document') {
   const htmlContent = marked(markdownContent);
-  
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title}</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/${hljsVersion}/styles/github.min.css" media="(prefers-color-scheme: light)">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/${hljsVersion}/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
     <style>
         ${getCSSStyles()}
     </style>
@@ -23,9 +27,9 @@ function convertMarkdownToHtml(markdownContent, title = 'Document') {
     <div class="container">
         ${htmlContent}
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/${hljsVersion}/highlight.min.js"></script>
     <script type="module">
-        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@${mermaidVersion}/dist/mermaid.esm.min.mjs';
         mermaid.initialize({
             startOnLoad: false,
             theme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default'
