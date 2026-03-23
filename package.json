@@ -1,7 +1,7 @@
 {
   "name": "md2html",
   "version": "1.0.0",
-  "description": "Simple markdown to HTML converter with modern CSS and syntax highlighting",
+  "description": "CLI tool to convert Markdown to HTML",
   "main": "index.js",
   "bin": {
     "md2html": "./index.js"
