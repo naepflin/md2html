@@ -31,6 +31,10 @@ md2html README.md
 md2html README.md index.html
 ```
 
+## Printing
+
+The generated HTML includes print styles with `break-after: avoid` on headings to keep them with the following content. This works in Chrome but **not in Safari** — use Chrome for printing.
+
 ## Dependencies
 
 - [marked](https://marked.js.org/) — Markdown parser

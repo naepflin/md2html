@@ -97,6 +97,12 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.25;
 }
 
+@media print {
+  h1, h2, h3, h4, h5, h6 {
+    break-after: avoid;
+  }
+}
+
 h1 { font-size: 2.5rem; }
 h2 { font-size: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; }
 h3 { font-size: 1.5rem; }
