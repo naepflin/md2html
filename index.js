@@ -320,16 +320,22 @@ function main() {
   }
   
   const inputFile = args[0];
-  const outputFile = args[1] || inputFile.replace(/\.md$/, '.html');
-  
+  const ext = path.extname(inputFile);
+  const outputFile = args[1] || (ext ? inputFile.replace(new RegExp(ext.replace('.', '\\.') + '$'), '.html') : inputFile + '.html');
+
   if (!fs.existsSync(inputFile)) {
     console.error(`Error: File "${inputFile}" not found`);
     process.exit(1);
   }
-  
+
+  if (path.resolve(inputFile) === path.resolve(outputFile)) {
+    console.error(`Error: Output file would overwrite input file "${inputFile}". Please specify a different output file.`);
+    process.exit(1);
+  }
+
   try {
     const markdownContent = fs.readFileSync(inputFile, 'utf8');
-    const title = path.basename(inputFile, '.md');
+    const title = path.basename(inputFile, ext);
     const htmlContent = convertMarkdownToHtml(markdownContent, title);
     
     fs.writeFileSync(outputFile, htmlContent);
