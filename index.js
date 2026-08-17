@@ -312,23 +312,31 @@ hr {
 
 function main() {
   const args = process.argv.slice(2);
-  
+
+  const stdoutFlagIndex = args.indexOf('--stdout');
+  let toStdout = stdoutFlagIndex !== -1;
+  if (toStdout) args.splice(stdoutFlagIndex, 1);
+
   if (args.length === 0) {
-    console.log('Usage: md2html <input.md> [output.html]');
+    console.log('Usage: md2html <input.md> [output.html] [--stdout]');
     console.log('Example: md2html README.md index.html');
+    console.log('Use "-" as the output file or pass --stdout to write the HTML to stdout.');
     process.exit(1);
   }
-  
+
   const inputFile = args[0];
   const ext = path.extname(inputFile);
-  const outputFile = args[1] || (ext ? inputFile.replace(new RegExp(ext.replace('.', '\\.') + '$'), '.html') : inputFile + '.html');
+  if (args[1] === '-') toStdout = true;
+  const outputFile = toStdout
+    ? null
+    : args[1] || (ext ? inputFile.replace(new RegExp(ext.replace('.', '\\.') + '$'), '.html') : inputFile + '.html');
 
   if (!fs.existsSync(inputFile)) {
     console.error(`Error: File "${inputFile}" not found`);
     process.exit(1);
   }
 
-  if (path.resolve(inputFile) === path.resolve(outputFile)) {
+  if (outputFile && path.resolve(inputFile) === path.resolve(outputFile)) {
     console.error(`Error: Output file would overwrite input file "${inputFile}". Please specify a different output file.`);
     process.exit(1);
   }
@@ -337,9 +345,13 @@ function main() {
     const markdownContent = fs.readFileSync(inputFile, 'utf8');
     const title = path.basename(inputFile, ext);
     const htmlContent = convertMarkdownToHtml(markdownContent, title);
-    
-    fs.writeFileSync(outputFile, htmlContent);
-    console.log(`Successfully converted "${inputFile}" to "${outputFile}"`);
+
+    if (toStdout) {
+      process.stdout.write(htmlContent);
+    } else {
+      fs.writeFileSync(outputFile, htmlContent);
+      console.log(`Successfully converted "${inputFile}" to "${outputFile}"`);
+    }
   } catch (error) {
     console.error('Error converting file:', error.message);
     process.exit(1);

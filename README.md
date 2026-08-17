@@ -20,16 +20,20 @@ npm link   # makes `md2html` available globally
 ## Usage
 
 ```bash
-md2html <input.md> [output.html]
+md2html <input.md> [output.html] [--stdout]
 ```
 
 If `output.html` is omitted, the output file is named after the input (e.g. `example.md` → `example.html`).
+
+Pass `--stdout` (or use `-` as the output file) to write the HTML to stdout instead of a file, so it can be piped or redirected. In this mode nothing else is printed to stdout.
 
 ### Examples
 
 ```bash
 md2html example.md
 md2html example.md index.html
+md2html example.md - > index.html
+md2html example.md --stdout | pbcopy
 ```
 
 ## Printing
