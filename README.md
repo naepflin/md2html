@@ -20,12 +20,15 @@ npm link   # makes `md2html` available globally
 ## Usage
 
 ```bash
-md2html <input.md> [output.html] [--stdout]
+md2html <input.md> [output.html] [--stdout] [--fragment]
 ```
 
 If `output.html` is omitted, the output file is named after the input (e.g. `example.md` → `example.html`).
 
-Pass `--stdout` (or use `-` as the output file) to write the HTML to stdout instead of a file, so it can be piped or redirected. In this mode nothing else is printed to stdout.
+### Options
+
+- `--stdout` (or `-` as the output file) — write the HTML to stdout instead of a file, so it can be piped or redirected. In this mode nothing else is printed to stdout.
+- `--fragment` — emit only the converted content tags (`<h1>`, `<p>`, `<pre>`, …), without the `<!DOCTYPE>`, `<html>`/`<head>`/`<body>` wrapper, the embedded CSS and the highlight.js/Mermaid scripts. Useful for embedding the result into an existing page or template. GitHub-style alerts still render as `<div class="markdown-alert …">`, but you need to supply your own styles for them.
 
 ### Examples
 
@@ -34,6 +37,8 @@ md2html example.md
 md2html example.md index.html
 md2html example.md - > index.html
 md2html example.md --stdout | pbcopy
+md2html example.md --fragment --stdout
+md2html example.md partial.html --fragment
 ```
 
 ## Printing

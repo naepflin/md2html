@@ -49,9 +49,13 @@ ${body}
   }],
 };
 
-function convertMarkdownToHtml(markdownContent, title = 'Document') {
+function convertMarkdownToFragment(markdownContent) {
   marked.use(alertExtension);
-  const htmlContent = marked(markdownContent);
+  return marked(markdownContent);
+}
+
+function convertMarkdownToHtml(markdownContent, title = 'Document') {
+  const htmlContent = convertMarkdownToFragment(markdownContent);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -310,17 +314,25 @@ hr {
 `;
 }
 
+function takeFlag(args, name) {
+  const index = args.indexOf(name);
+  if (index === -1) return false;
+  args.splice(index, 1);
+  return true;
+}
+
 function main() {
   const args = process.argv.slice(2);
 
-  const stdoutFlagIndex = args.indexOf('--stdout');
-  let toStdout = stdoutFlagIndex !== -1;
-  if (toStdout) args.splice(stdoutFlagIndex, 1);
+  let toStdout = takeFlag(args, '--stdout');
+  const fragmentOnly = takeFlag(args, '--fragment');
 
   if (args.length === 0) {
-    console.log('Usage: md2html <input.md> [output.html] [--stdout]');
+    console.log('Usage: md2html <input.md> [output.html] [--stdout] [--fragment]');
     console.log('Example: md2html README.md index.html');
     console.log('Use "-" as the output file or pass --stdout to write the HTML to stdout.');
+    console.log('Pass --fragment to emit only the converted content tags, without the');
+    console.log('surrounding HTML document, CSS and scripts.');
     process.exit(1);
   }
 
@@ -344,7 +356,9 @@ function main() {
   try {
     const markdownContent = fs.readFileSync(inputFile, 'utf8');
     const title = path.basename(inputFile, ext);
-    const htmlContent = convertMarkdownToHtml(markdownContent, title);
+    const htmlContent = fragmentOnly
+      ? convertMarkdownToFragment(markdownContent)
+      : convertMarkdownToHtml(markdownContent, title);
 
     if (toStdout) {
       process.stdout.write(htmlContent);
@@ -362,4 +376,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { convertMarkdownToHtml };
+module.exports = { convertMarkdownToHtml, convertMarkdownToFragment };
