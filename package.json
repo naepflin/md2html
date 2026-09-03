@@ -1,7 +1,7 @@
 {
   "name": "md2html",
   "version": "1.0.0",
-  "description": "CLI tool to convert Markdown to HTML",
+  "description": "CLI tool to convert Markdown to HTML and back",
   "main": "index.js",
   "bin": {
     "md2html": "./index.js"
@@ -12,12 +12,15 @@
   "dependencies": {
     "highlight.js": "^11.9.0",
     "marked": "^17.0.0",
-    "mermaid": "^11.0.0"
+    "mermaid": "^11.0.0",
+    "turndown": "^7.2.4",
+    "turndown-plugin-gfm": "^1.0.2"
   },
   "keywords": [
     "markdown",
     "html",
     "converter",
+    "html-to-markdown",
     "syntax-highlighting"
   ],
   "author": "",

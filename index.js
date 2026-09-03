@@ -3,6 +3,8 @@
 const fs = require('fs');
 const path = require('path');
 const { marked } = require('marked');
+const TurndownService = require('turndown');
+const { gfm } = require('turndown-plugin-gfm');
 
 const pkg = require('./package.json');
 const hljsVersion = pkg.dependencies['highlight.js'].replace(/^\^/, '');
@@ -91,6 +93,84 @@ function convertMarkdownToHtml(markdownContent, title = 'Document') {
     </script>
 </body>
 </html>`;
+}
+
+function hasClass(node, className) {
+  return typeof node.className === 'string' && node.className.split(/\s+/).includes(className);
+}
+
+function createTurndownService() {
+  const turndownService = new TurndownService({
+    headingStyle: 'atx',
+    hr: '---',
+    bulletListMarker: '-',
+    codeBlockStyle: 'fenced',
+    emDelimiter: '*',
+    strongDelimiter: '**',
+    linkStyle: 'inlined',
+  });
+
+  turndownService.use(gfm);
+  turndownService.remove(['script', 'style', 'noscript']);
+
+  // gfm emits a single tilde; GitHub's canonical form is a double one.
+  turndownService.addRule('strikethrough', {
+    filter: ['del', 's'],
+    replacement: (content) => `~~${content}~~`,
+  });
+
+  // Same as turndown's built-in list item, but indented by the marker width
+  // instead of a fixed four spaces.
+  turndownService.addRule('listItem', {
+    filter: 'li',
+    replacement(content, node, options) {
+      const parent = node.parentNode;
+      let prefix = `${options.bulletListMarker} `;
+      if (parent.nodeName === 'OL') {
+        const start = Number(parent.getAttribute('start') || 1);
+        const index = Array.prototype.indexOf.call(parent.children, node);
+        prefix = `${start + index}. `;
+      }
+      const text = content
+        .replace(/^\n+/, '')
+        .replace(/\n+$/, '\n')
+        .replace(/^(\[[ x]\])\s+/, '$1 ')
+        .replace(/\n/gm, `\n${' '.repeat(prefix.length)}`);
+      return prefix + text + (node.nextSibling && !/\n$/.test(text) ? '\n' : '');
+    },
+  });
+
+  // The alert title is re-emitted as the [!TYPE] marker by the rule below.
+  turndownService.addRule('alertTitle', {
+    filter: (node) => node.nodeName === 'P' && hasClass(node, 'markdown-alert-title'),
+    replacement: () => '',
+  });
+
+  turndownService.addRule('alert', {
+    filter: (node) => node.nodeName === 'DIV' && hasClass(node, 'markdown-alert'),
+    replacement(content, node) {
+      const alertType = Object.keys(alertTypes)
+        .find((type) => hasClass(node, `markdown-alert-${type.toLowerCase()}`));
+      const body = content.trim().split('\n')
+        .map((line) => (line ? `> ${line}` : '>'))
+        .join('\n');
+      if (!alertType) return `\n\n${body}\n\n`;
+      return `\n\n> [!${alertType}]\n${body}\n\n`;
+    },
+  });
+
+  return turndownService;
+}
+
+// A full document carries <head> content that turndown would render as stray
+// text, so convert the body only. Fragments are passed through untouched.
+function extractBody(htmlContent) {
+  const match = htmlContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  return match ? match[1] : htmlContent;
+}
+
+function convertHtmlToMarkdown(htmlContent) {
+  return `${createTurndownService().turndown(extractBody(htmlContent)).trim()}\n`;
 }
 
 function getCSSStyles() {
@@ -326,22 +406,35 @@ function main() {
 
   let toStdout = takeFlag(args, '--stdout');
   const fragmentOnly = takeFlag(args, '--fragment');
+  const reverseLong = takeFlag(args, '--reverse');
+  const reverseShort = takeFlag(args, '-r');
 
   if (args.length === 0) {
     console.log('Usage: md2html <input.md> [output.html] [--stdout] [--fragment]');
+    console.log('       md2html -r <input.html> [output.md] [--stdout]');
     console.log('Example: md2html README.md index.html');
-    console.log('Use "-" as the output file or pass --stdout to write the HTML to stdout.');
+    console.log('Use "-" as the output file or pass --stdout to write the output to stdout.');
     console.log('Pass --fragment to emit only the converted content tags, without the');
     console.log('surrounding HTML document, CSS and scripts.');
+    console.log('Pass -r/--reverse to convert the other way, from HTML back to Markdown.');
+    console.log('An .html or .htm input is converted in reverse automatically.');
     process.exit(1);
   }
 
   const inputFile = args[0];
   const ext = path.extname(inputFile);
+  const reverse = reverseLong || reverseShort || ['.html', '.htm'].includes(ext.toLowerCase());
+
+  if (reverse && fragmentOnly) {
+    console.error('Error: --fragment cannot be combined with --reverse.');
+    process.exit(1);
+  }
+
+  const targetExt = reverse ? '.md' : '.html';
   if (args[1] === '-') toStdout = true;
   const outputFile = toStdout
     ? null
-    : args[1] || (ext ? inputFile.replace(new RegExp(ext.replace('.', '\\.') + '$'), '.html') : inputFile + '.html');
+    : args[1] || (ext ? inputFile.replace(new RegExp(ext.replace('.', '\\.') + '$'), targetExt) : inputFile + targetExt);
 
   if (!fs.existsSync(inputFile)) {
     console.error(`Error: File "${inputFile}" not found`);
@@ -354,16 +447,21 @@ function main() {
   }
 
   try {
-    const markdownContent = fs.readFileSync(inputFile, 'utf8');
+    const inputContent = fs.readFileSync(inputFile, 'utf8');
     const title = path.basename(inputFile, ext);
-    const htmlContent = fragmentOnly
-      ? convertMarkdownToFragment(markdownContent)
-      : convertMarkdownToHtml(markdownContent, title);
+    let outputContent;
+    if (reverse) {
+      outputContent = convertHtmlToMarkdown(inputContent);
+    } else if (fragmentOnly) {
+      outputContent = convertMarkdownToFragment(inputContent);
+    } else {
+      outputContent = convertMarkdownToHtml(inputContent, title);
+    }
 
     if (toStdout) {
-      process.stdout.write(htmlContent);
+      process.stdout.write(outputContent);
     } else {
-      fs.writeFileSync(outputFile, htmlContent);
+      fs.writeFileSync(outputFile, outputContent);
       console.log(`Successfully converted "${inputFile}" to "${outputFile}"`);
     }
   } catch (error) {
@@ -376,4 +474,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { convertMarkdownToHtml, convertMarkdownToFragment };
+module.exports = { convertMarkdownToHtml, convertMarkdownToFragment, convertHtmlToMarkdown };
